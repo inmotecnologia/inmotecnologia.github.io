@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  const cpfcnpj = params.get('cpfcnpj');
+  const customfield = params.get('customfield');
+
+  (async () => {
+    const res = await run(token, cpfcnpj, customfield);
+    document.body.innerText = JSON.stringify(res);
+  })();
+
+  async function run(token, cpfcnpj, customfield) {
+    try {
+      const obj = await buscarPorCustomField(token, customfield, cpfcnpj);
+      if (!obj.data || !Array.isArray(obj.data) || obj.data.length === 0) {
+        return { erro: "nenhuma empresa encontrada" };
+      }
+      return obj.data[0];
+    } catch (e) {
+      return { erro: e.message };
+    }
+  }
+
+  async function buscarPorCustomField(token, customFieldId, valorDesejado) {
+
+    // Limpa o valor buscado: remove tudo que não é número
+    const valorLimpo = valorDesejado.replace(/\D/g, '');
+
+    let page = 1;
+    let todas = [];
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await fetch(
+        `https://crm.rdstation.com/api/v1/organizations?token=${token}&limit=50&page=${page}&order=created_at&direction=desc`
+      );
+      const data = await res.json();
+
+      const encontradas = (data.organizations || []).filter(org => {
+      const campo = org.custom_fields?.find(cf => cf.custom_field_id === customFieldId);
+      // Limpa o valor da API também antes de comparar
+      const valorCampo = campo?.value?.replace(/\D/g, '') ?? '';
+      return valorCampo === valorLimpo;
+    });
+
+      todas = todas.concat(encontradas);
+      hasMore = data.organizations && data.organizations.length === 50;
+      page++;
+    }
+
+    return { data: todas };
+  }
+</script>
+</body>
+</html>
