@@ -36,7 +36,7 @@
     let todas = [];
     let hasMore = true;
 
-    while (hasMore) {
+    while (hasMore && page<201) {
       const res = await fetch(
         `https://crm.rdstation.com/api/v1/organizations?token=${token}&limit=50&page=${page}&order=created_at&direction=desc`
       );
