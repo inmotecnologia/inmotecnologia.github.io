@@ -10,6 +10,11 @@
   const cpfcnpj = params.get('cpfcnpj');
   const customfield = params.get('customfield');
 
+    // DEBUG: veja se os parâmetros chegaram
+  console.log("token:", token);
+  console.log("cpfcnpj:", cpfcnpj);
+  console.log("customfield:", customfield);
+
   (async () => {
     const res = await run(token, cpfcnpj, customfield);
     document.body.innerText = JSON.stringify(res);
@@ -17,12 +22,17 @@
 
   async function run(token, cpfcnpj, customfield) {
     try {
+      // DEBUG: veja se chegou aqui
+      console.log("Iniciando busca...");
+      
       const obj = await buscarPorCustomField(token, customfield, cpfcnpj);
       if (!obj.data || !Array.isArray(obj.data) || obj.data.length === 0) {
         return { erro: "nenhuma empresa encontrada" };
       }
       return obj.data[0];
     } catch (e) {
+      // DEBUG: mostra o erro completo
+      console.error("Erro completo:", e);
       return { erro: e.message };
     }
   }
@@ -37,10 +47,19 @@
     let hasMore = true;
 
     while (hasMore && page<201) {
-      const res = await fetch(
-        `https://crm.rdstation.com/api/v1/organizations?token=${token}&limit=50&page=${page}&order=created_at&direction=desc`
-      );
+      const url = `https://crm.rdstation.com/api/v1/organizations?token=${token}&limit=50&page=${page}&order=created_at&direction=desc`;
+      
+      // DEBUG: veja a URL exata sendo chamada
+      console.log("Chamando URL:", url);
+
+      const res = await fetch(url);
+
+       // DEBUG: veja o status da resposta
+      console.log("Status HTTP:", res.status);
+      
       const data = await res.json();
+      // DEBUG: veja o que a API retornou
+      console.log("Resposta da API:", data);
 
       const encontradas = (data.organizations || []).filter(org => {
       const campo = org.custom_fields?.find(cf => cf.custom_field_id === customFieldId);
